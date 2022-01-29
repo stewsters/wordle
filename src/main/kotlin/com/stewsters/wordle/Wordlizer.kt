@@ -5,70 +5,115 @@ import java.io.File
 // TODO: add command based updating
 // TODO: need a list of letters we know do not occur in a position
 // TODO: need an actual wordle list
+val allWords =
+    File("cleanwords.txt").readLines().filter { it.length == 5 && it.all { it.isLetter() } }.map { it.lowercase() }
+        .toMutableList()
+
 fun main() {
 
-    val allWords = File("words.txt").readLines().filter { it.length == 5 && it.all { it.isLetter() } }.map { it.lowercase() }
+//    File("cleanwords.txt").writeText(allWords.joinToString("\n"))
 
-//    val tried = listOf(
-//        "audio"
-//    )
+    val solve = Solving()
 
-    // When we get results that
+    while (!solve.isSolved()) {
+        val validWords = solve.filterValid(allWords)
 
-    val known = listOf<Char?>(null, 'e', null, null, null)
-    val contains = listOf<Char>('e', 'r', 'p', 'y')
-    val invalid = listOf<Char>('a', 'u', 'd', 'i', 'o', 'b', 'n', 'c', 'h', 's', 't', 'l')
+        // find most common letters we have not tried yet
+        val charsToExplore = validWords.flatMap { it.toCharArray().toList() }
+            .filter { !solve.invalid.contains(it) && !solve.contains.contains(it) }
+            .groupingBy { it }
+            .eachCount()
 
-//    val triedCharacters = tried.flatMap { it.toCharArray().toList() }
+        println("Characters we are looking for")
+        println(charsToExplore.toList().sortedByDescending { it.second })
 
-    val validWords = allWords.filter { potentialWord ->
-        if (invalid.any { potentialWord.contains(it) })
-            return@filter false
 
-        if (!contains.all { potentialWord.contains(it) })
-            return@filter false
-
-//
-        known.forEachIndexed { index, c ->
-            if (c != null && potentialWord[index] != c)
-                return@filter false
+        // maximize information gain?
+        val mostInfoGain = validWords.maxByOrNull { potentialWord ->
+            potentialWord.toCharArray().toList().distinct().sumOf { charsToExplore[it] ?: 0 }
         }
 
-        true
+        println("Most info gain " + mostInfoGain)
+
+        if (mostInfoGain == null) {
+            println("No valid words left")
+            return
+        }
+
+        println("How did that go? g b y   r" )
+        val input = readln()
+        solve.process(mostInfoGain, input)
+
+    }
+}
+
+class Solving() {
+    val known = (0 until 5).map { CharSpot() }
+    val contains = mutableListOf<Char>()
+    val invalid = mutableListOf<Char>()
+
+    fun filterValid(allWords: List<String>): List<String> {
+        return allWords.filter { potentialWord ->
+            if (invalid.any { potentialWord.contains(it) })
+                return@filter false
+
+            if (!contains.all { potentialWord.contains(it) })
+                return@filter false
+
+            known.forEachIndexed { index, c ->
+                if (!c.options.contains(potentialWord[index]))
+                    return@filter false
+            }
+
+            true
+        }
     }
 
-    println(validWords)
-
-    // find most common letters we have not tried yet
-    val charsToExplore = validWords.flatMap { it.toCharArray().toList() }
-        .filter { !invalid.contains(it) && !contains.contains(it) }
-        .groupingBy { it }.eachCount()
-
-    println("Characters we are looking for")
-    println(charsToExplore.toList().sortedByDescending { it.second })
-
-    val mostInfoGain = validWords.maxByOrNull { potentialWord ->
-        potentialWord.toCharArray().toList().distinct().sumOf { charsToExplore[it] ?: 0 }
+    fun isSolved(): Boolean {
+        return known.all { it.options.size == 1 }
     }
 
-    println("Most info gain " + mostInfoGain)
+    fun process(tried: String, correct: String) {
+        // green
+        // black
+        // yellow
+        // r remove
+        if (correct == "r") {
+            println("Removing this one")
+            allWords.remove(tried)
+            return
+        }
+        if (tried.length != correct.length) {
+            println("Wrong length")
+            return
+        }
+        if (!listOf('g', 'b', 'y').containsAll(correct.trim().toCharArray().toList().distinct())) {
+            println("invalid characters")
+            return
+        }
 
 
-//    ('a'..'z').toList()
+        (0 until 5).forEach { i ->
+            val cs = known[i]
+            val triedChar = tried[i]
+            when (correct[i]) {
+                'g' -> cs.options.removeAll { it != triedChar }
+                'y' -> {
+                    cs.options.remove(triedChar) // it's not here
+                    contains.add(triedChar)
+                }
+                'b' -> {
+                    cs.options.remove(triedChar)
+                    invalid.add(triedChar)
+                }
+
+            }
+        }
+
+    }
 
 }
 
-// maximize information gain?
-
-//
-//class Solving(){
-//    val
-//
-//}
-//
-//class CharSpot(
-//    val index:Int
-//){
-//    val options = ('a'..'z').toMutableList()
-//    val invalid = mutableListOf<Char>()
-//}
+class CharSpot {
+    val options = ('a'..'z').toMutableList()
+}
