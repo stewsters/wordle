@@ -1,5 +1,6 @@
 plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.6.10'
+//    id 'application'
 }
 
 group 'org.example'
@@ -12,3 +13,7 @@ repositories {
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib"
 }
+
+//application {
+//    mainClass = 'com.stewsters.wordle.WordlizerKt'
+//}
