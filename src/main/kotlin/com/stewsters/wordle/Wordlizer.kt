@@ -1,12 +1,15 @@
 package com.stewsters.wordle
 
 import java.io.File
+import kotlin.math.max
 
 // TODO: add command based updating
 // TODO: need a list of letters we know do not occur in a position
 // TODO: need an actual wordle list
 val allWords =
-    File("cleanwords.txt").readLines().filter { it.length == 5 && it.all { it.isLetter() } }.map { it.lowercase() }
+    File("cleanwords.txt").readLines()
+        .filter { it.length == 5 && it.all { it.isLetter() } }
+        .map { it.lowercase() }
         .toMutableList()
 
 fun main() {
@@ -19,18 +22,29 @@ fun main() {
         val validWords = solve.filterValid(allWords)
 
         // find most common letters we have not tried yet
-        val charsToExplore = validWords.flatMap { it.toCharArray().toList() }
-            .filter { !solve.invalid.contains(it) && !solve.contains.contains(it) }
-            .groupingBy { it }
-            .eachCount()
+        val charsToExplore = mutableMapOf<Int, Map<Char, Int>>()
+
+        (0 until 5).forEach { charPos ->
+            charsToExplore[charPos] = validWords
+                .map { it.toCharArray().toList()[charPos] }
+                .filter { !solve.invalid.contains(it) && !solve.contains.contains(it) }
+                .groupingBy { it }
+                .eachCount()
+        }
+
 
         println("Characters we are looking for")
-        println(charsToExplore.toList().sortedByDescending { it.second })
-
+        (0 until 5).forEach { charPos ->
+            println("$charPos " + charsToExplore[charPos]?.toList()?.sortedByDescending { it.second })
+        }
 
         // maximize information gain?
         val mostInfoGain = validWords.maxByOrNull { potentialWord ->
-            potentialWord.toCharArray().toList().distinct().sumOf { charsToExplore[it] ?: 0 }
+            potentialWord.toCharArray().toList()
+                .mapIndexed { index, c -> Pair(c, charsToExplore[index]?.get(c) ?: 0) }
+                .groupingBy { it.first }
+                .fold(0) { o, n -> max(o, n.second) }
+                .entries.sumOf { it.value }
         }
 
         println("Most info gain " + mostInfoGain)
@@ -40,7 +54,7 @@ fun main() {
             return
         }
 
-        println("How did that go? g b y   r" )
+        println("How did that go? g b y   r")
         val input = readln()
         solve.process(mostInfoGain, input)
 

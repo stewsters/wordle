@@ -3041,7 +3041,6 @@ brule
 brume
 brune
 bruni
-brunk
 brunn
 bruno
 bruns
@@ -5718,7 +5717,6 @@ drugi
 drugs
 druid
 drums
-drung
 drunk
 drunt
 drupa
