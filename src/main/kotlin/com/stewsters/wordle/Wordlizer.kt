@@ -7,16 +7,26 @@ import kotlin.math.max
 // TODO: need a list of letters we know do not occur in a position
 // TODO: need an actual wordle list
 val allWords =
-    File("cleanwords.txt").readLines()
+    (
+            File("answers.txt").readLines() //+
+//                    File("allowed-guesses.txt").readLines() +
+//                    File("cleanwords.txt").readLines()
+            ) //
         .filter { it.length == 5 && it.all { it.isLetter() } }
         .map { it.lowercase() }
+        .distinct()
         .toMutableList()
 
 fun main() {
-
+//    println(allWords.filter { it[1]=='l' && it[3]=='e' && it[4]=='r' && listOf('t','u','i','p','a','s','b').all {char-> !it.contains(char) }  })
 //    File("cleanwords.txt").writeText(allWords.joinToString("\n"))
 
     val solve = Solving()
+
+    // TODO: something is wrong with the last one, humor should be getting matched
+//    solve.process("slate", "bbbbb")
+//    solve.process("crony", "byybb")
+//    solve.process("furor", "bgbgg") // This last one fails since there are 2 rs, one in the right and one in the wrong
 
     while (!solve.isSolved()) {
         val validWords = solve.filterValid(allWords)
@@ -38,25 +48,28 @@ fun main() {
             println("$charPos " + charsToExplore[charPos]?.toList()?.sortedByDescending { it.second })
         }
 
-        // maximize information gain?
-        val mostInfoGain = validWords.maxByOrNull { potentialWord ->
+        val highValueWords = validWords.sortedByDescending { potentialWord ->
             potentialWord.toCharArray().toList()
                 .mapIndexed { index, c -> Pair(c, charsToExplore[index]?.get(c) ?: 0) }
                 .groupingBy { it.first }
                 .fold(0) { o, n -> max(o, n.second) }
                 .entries.sumOf { it.value }
         }
+        println(highValueWords.take(10))
+
+        // maximize information gain?
+        val mostInfoGain = highValueWords.take(1)
 
         println("Most info gain " + mostInfoGain)
 
-        if (mostInfoGain == null) {
+        if (mostInfoGain.isEmpty()) {
             println("No valid words left")
             return
         }
 
         println("How did that go? g b y   r")
         val input = readln()
-        solve.process(mostInfoGain, input)
+        solve.process(mostInfoGain.first(), input)
 
     }
 }
